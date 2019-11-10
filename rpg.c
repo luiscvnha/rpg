@@ -23,8 +23,8 @@
 int main(int argc, char* argv[]) {
 	// check if the number of arguments is valid
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <options> <length>\n", argv[0]);
-		fprintf(stderr, "options:\n");
+		fprintf(stderr, "Usage: %s <flags> <length>\n", argv[0]);
+		fprintf(stderr, "flags:\n");
 		fprintf(stderr, "\t-l\tuse lowercase letters\n");
 		fprintf(stderr, "\t-u\tuse uppercase letters\n");
 		fprintf(stderr, "\t-n\tuse numbers\n");
