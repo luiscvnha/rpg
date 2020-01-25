@@ -6,8 +6,8 @@
 #include <fcntl.h>
 
 
-#define uint			(unsigned int)
-#define uchar			(unsigned char)
+#define uint			unsigned int
+#define uchar			unsigned char
 
 #define CHR_LOW			"abcdefghijklmnopqrstuvwxyz"
 #define CHR_UPP			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
