@@ -18,8 +18,6 @@ flags | meaning
 -n | use numbers
 -s | use special characters
 
-flags can be combined
-
 ### Example
 ```
 $ ./rpg -lun 20
