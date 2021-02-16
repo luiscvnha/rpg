@@ -1,4 +1,5 @@
 CC = gcc
+CFLAGS = -O2
 
-rpg:
-	$(CC) -march=native -O2 -o rpg rpg.c
+rpg: rpg.c
+	$(CC) $(CFLAGS) -o rpg rpg.c
