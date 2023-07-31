@@ -1,5 +1,6 @@
 # Random Password Generator
-Using `/dev/urandom` for the randomness
+
+Using `/dev/urandom` for the randomness.
 
 ## Installation
 ```
