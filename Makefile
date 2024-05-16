@@ -1,5 +1,14 @@
-CC = gcc
-CFLAGS = -O2
+CC := gcc
+CFLAGS := -Wall -Wextra -O2
 
-rpg: rpg.c
-	$(CC) $(CFLAGS) -o rpg rpg.c
+BIN := rpg
+
+
+.PHONY: clean
+
+
+${BIN}: rpg.c
+	${CC} ${CFLAGS} -o $@ $^
+
+clean:
+	rm -f ${BIN}

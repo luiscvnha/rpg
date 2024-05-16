@@ -4,15 +4,15 @@ Using `/dev/urandom` for the randomness.
 
 ## Installation
 ```
-$ make
+make
 ```
 
 ## How to use
 ```
-$ ./rpg <flags> <password length>
+./rpg <options> <password length>
 ```
 
-flags | meaning
+options | meaning
 ---|---
 -l | use lowercase letters
 -u | use uppercase letters
@@ -21,6 +21,5 @@ flags | meaning
 
 ### Example
 ```
-$ ./rpg -lun 20
-SeChHb8l633UbyxVEMri
+./rpg -lun 16
 ```
