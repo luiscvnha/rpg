@@ -6,36 +6,40 @@
 #include <fcntl.h>
 
 
-struct args {
-    int passwd_length;
-    bool opt_lowercase_letters;
-    bool opt_uppercase_letters;
+typedef unsigned char byte;
+
+typedef struct args {
+    int passwd_len;
+    bool opt_low_letters;
+    bool opt_upp_letters;
     bool opt_numbers;
-    bool opt_special_characters;
-};
+    bool opt_special_chars;
+} Args;
 
 
-static const char* LOWERCASE_LETTERS = "abcdefghijklmnopqrstuvwxyz";
-static const char* UPPERCASE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char* const LOW_LETTERS = "abcdefghijklmnopqrstuvwxyz";
+static const char* const UPP_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const int SIZE_LETTERS = 26;
 
-static const char* NUMBERS = "0123456789";
+static const char* const NUMBERS = "0123456789";
 static const int SIZE_NUMBERS = 10;
 
-static const char* SPECIAL_CHARACTERS = "!\"#$%&'()*+,-./:;<=>?@[\\]_{|}";
-static const int SIZE_SPECIAL_CHARACTERS = 29;
+static const char* const SPECIAL_CHARS = "!\"#$%&'()*+,-./:;<=>?@[\\]_{|}";
+static const int SIZE_SPECIAL_CHARS = 29;
 
-static const int MIN_PASSWD_LENGTH = 1;
+static const int MIN_PASSWD_LEN = 1;
 
 
-static bool parse_args(int argc, char* argv[], struct args* out_args) {
-    out_args->passwd_length = -1;
-    out_args->opt_lowercase_letters = false;
-    out_args->opt_uppercase_letters = false;
-    out_args->opt_numbers = false;
-    out_args->opt_special_characters = false;
+static bool parse_args(int argc, char** argv, Args** const out_args) {
+    Args* args = (Args*) malloc(sizeof(Args));
 
-    bool passwd_length_defined = false;
+    args->passwd_len = -1;
+    args->opt_low_letters = false;
+    args->opt_upp_letters = false;
+    args->opt_numbers = false;
+    args->opt_special_chars = false;
+
+    bool passwd_len_defined = false;
 
     // check if the number of arguments is valid
     if (argc < 2) {
@@ -45,6 +49,7 @@ static bool parse_args(int argc, char* argv[], struct args* out_args) {
         fprintf(stderr, "    -u   use uppercase letters\n");
         fprintf(stderr, "    -n   use numbers\n");
         fprintf(stderr, "    -s   use special characters\n");
+        free(args);
         return false;
     }
 
@@ -54,105 +59,112 @@ static bool parse_args(int argc, char* argv[], struct args* out_args) {
             for (int j = 1; argv[i][j] != '\0'; ++j) {
                 switch (argv[i][j]) {
                     case 'l':
-                        out_args->opt_lowercase_letters = true;
+                        args->opt_low_letters = true;
                         break;
                     case 'u':
-                        out_args->opt_uppercase_letters = true;
+                        args->opt_upp_letters = true;
                         break;
                     case 'n':
-                        out_args->opt_numbers = true;
+                        args->opt_numbers = true;
                         break;
                     case 's':
-                        out_args->opt_special_characters = true;
+                        args->opt_special_chars = true;
                         break;
                     default:
                         fprintf(stderr, "Invalid option: -%c\n", argv[i][j]);
+                        free(args);
                         return false;
                 }
             }
         } else { // password length
-            if (passwd_length_defined) {
+            if (passwd_len_defined) {
                 fprintf(stderr, "Invalid argument: %s\n", argv[i]);
+                free(args);
                 return false;
             } else {
-                int passwd_length = atoi(argv[i]);
-                if (passwd_length < MIN_PASSWD_LENGTH) {
+                int passwd_len = atoi(argv[i]);
+                if (passwd_len < MIN_PASSWD_LEN) {
                     fprintf(stderr, "Invalid password length: %s\n", argv[i]);
+                    free(args);
                     return false;
                 }
-                out_args->passwd_length = passwd_length;
-                passwd_length_defined = true;
+                args->passwd_len = passwd_len;
+                passwd_len_defined = true;
             }
         }
     }
 
     // if the password length isn't defined
-    if (!passwd_length_defined) {
+    if (!passwd_len_defined) {
         fprintf(stderr, "Password length not defined\n");
+        free(args);
         return false;
     }
 
     // if no options are defined
     if (
-        !out_args->opt_lowercase_letters &&
-        !out_args->opt_uppercase_letters &&
-        !out_args->opt_numbers &&
-        !out_args->opt_special_characters
+        !args->opt_low_letters &&
+        !args->opt_upp_letters &&
+        !args->opt_numbers &&
+        !args->opt_special_chars
     ) {
         fprintf(stderr, "No option enabled\n");
+        free(args);
         return false;
     }
+
+    *out_args = args;
 
     return true;
 }
 
 
-static void create_character_pool(const struct args* args, char** out_characters, int* out_size_characters) {
-    int size_characters =
-            (args->opt_lowercase_letters ? SIZE_LETTERS : 0) +
-            (args->opt_uppercase_letters ? SIZE_LETTERS : 0) +
+static void create_char_pool(const Args* args, char** const out_chars, int* const out_size_chars) {
+    int size_chars =
+            (args->opt_low_letters ? SIZE_LETTERS : 0) +
+            (args->opt_upp_letters ? SIZE_LETTERS : 0) +
             (args->opt_numbers ? SIZE_NUMBERS : 0) +
-            (args->opt_special_characters ? SIZE_SPECIAL_CHARACTERS : 0);
+            (args->opt_special_chars ? SIZE_SPECIAL_CHARS : 0);
 
-    char* characters = (char*) malloc(size_characters * sizeof(char));
+    char* chars = (char*) malloc(size_chars * sizeof(char));
 
     int i = 0;
 
-    if (args->opt_lowercase_letters) {
-        strncpy(characters, LOWERCASE_LETTERS, SIZE_LETTERS);
+    if (args->opt_low_letters) {
+        strncpy(chars, LOW_LETTERS, SIZE_LETTERS);
         i += SIZE_LETTERS;
     }
 
-    if (args->opt_uppercase_letters) {
-        strncpy(characters+i, UPPERCASE_LETTERS, SIZE_LETTERS);
+    if (args->opt_upp_letters) {
+        strncpy(chars+i, UPP_LETTERS, SIZE_LETTERS);
         i += SIZE_LETTERS;
     }
 
     if (args->opt_numbers) {
-        strncpy(characters+i, NUMBERS, SIZE_NUMBERS);
+        strncpy(chars+i, NUMBERS, SIZE_NUMBERS);
         i += SIZE_NUMBERS;
     }
 
-    if (args->opt_special_characters) {
-        strncpy(characters+i, SPECIAL_CHARACTERS, SIZE_SPECIAL_CHARACTERS);
+    if (args->opt_special_chars) {
+        strncpy(chars+i, SPECIAL_CHARS, SIZE_SPECIAL_CHARS);
     }
 
-    *out_characters = characters;
-    *out_size_characters = size_characters;
+    *out_chars = chars;
+    *out_size_chars = size_chars;
 }
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     // parse arguments
-    struct args args;
+    Args* args;
     if (!parse_args(argc, argv, &args)) {
         return EXIT_FAILURE;
     }
 
     // create the pool of characters that will be used
-    char* characters;
-    int size_characters;
-    create_character_pool(&args, &characters, &size_characters);
+    char* chars;
+    int size_chars;
+    create_char_pool(args, &chars, &size_chars);
 
     // open /dev/urandom
     int urandom = open("/dev/urandom", O_RDONLY);
@@ -161,28 +173,30 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // read the random numbers to random_number_buffer[]
-    unsigned char random_number_buffer[args.passwd_length];
-    if (read(urandom, random_number_buffer, args.passwd_length) <= 0) {
+    // read random bytes (numbers between 0 and 255)
+    byte random_numbers[args->passwd_len];
+    if (read(urandom, random_numbers, args->passwd_len) <= 0) {
         fprintf(stderr, "Error reading from /dev/urandom\n");
         return EXIT_FAILURE;
     }
 
+    // close /dev/urandom
     close(urandom);
 
-    // fill passwd[] with the characters from characters[]
-    char passwd[args.passwd_length+1];
-    for (int i = 0; i < args.passwd_length; ++i) {
-        passwd[i] = characters[random_number_buffer[i] % size_characters];
+    // fill `passwd` with the characters from `chars`
+    char passwd[args->passwd_len+1];
+    for (int i = 0; i < args->passwd_len; ++i) {
+        passwd[i] = chars[random_numbers[i] % size_chars];
     }
 
-    passwd[args.passwd_length] = '\0';
+    passwd[args->passwd_len] = '\0';
 
     // print the result
     puts(passwd);
 
     // free allocated memory
-    free(characters);
+    free(args);
+    free(chars);
 
     return EXIT_SUCCESS;
 }

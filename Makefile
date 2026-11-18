@@ -7,7 +7,7 @@ BIN := rpg
 .PHONY: clean
 
 
-${BIN}: rpg.c
+${BIN}: ${BIN}.c
 	${CC} ${CFLAGS} -o $@ $^
 
 clean:
