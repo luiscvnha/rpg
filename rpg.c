@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -27,13 +28,11 @@ static const int SIZE_NUMBERS = 10;
 static const char* const SPECIAL_CHARS = "!\"#$%&'()*+,-./:;<=>?@[\\]_{|}";
 static const int SIZE_SPECIAL_CHARS = 29;
 
-static const int MIN_PASSWD_LEN = 1;
-
 
 static bool parse_args(int argc, char** argv, Args** const out_args) {
     Args* args = (Args*) malloc(sizeof(Args));
 
-    args->passwd_len = -1;
+    args->passwd_len = 0;
     args->opt_low_letters = false;
     args->opt_upp_letters = false;
     args->opt_numbers = false;
@@ -55,7 +54,8 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
 
     // check if the arguments are valid
     for (int i = 1; i < argc; ++i) {
-        if (argv[i][0] == '-') { // options
+        if (argv[i][0] == '-') {
+            // options
             for (int j = 1; argv[i][j] != '\0'; ++j) {
                 switch (argv[i][j]) {
                     case 'l':
@@ -76,18 +76,21 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
                         return false;
                 }
             }
-        } else { // password length
+        } else {
+            // password length
             if (passwd_len_defined) {
                 fprintf(stderr, "Invalid argument: %s\n", argv[i]);
                 free(args);
                 return false;
             } else {
-                int passwd_len = atoi(argv[i]);
-                if (passwd_len < MIN_PASSWD_LEN) {
-                    fprintf(stderr, "Invalid password length: %s\n", argv[i]);
-                    free(args);
-                    return false;
+                long passwd_len = strtol(argv[i], NULL, 10);
+                if (passwd_len < 1L) {
+                    passwd_len = 1L;
                 }
+                if (passwd_len > INT_MAX) {
+                    passwd_len = INT_MAX;
+                }
+
                 args->passwd_len = passwd_len;
                 passwd_len_defined = true;
             }
