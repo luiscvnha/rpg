@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <stdbool.h>
 
 
 typedef unsigned char byte;
@@ -119,8 +119,8 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
 }
 
 
-static void create_char_pool(const Args* args, char** const out_chars, int* const out_size_chars) {
-    int size_chars =
+static void create_char_pool(const Args* args, char** const out_chars, byte* const out_size_chars) {
+    byte size_chars =
             (args->opt_low_letters ? SIZE_LETTERS : 0) +
             (args->opt_upp_letters ? SIZE_LETTERS : 0) +
             (args->opt_numbers ? SIZE_NUMBERS : 0) +
@@ -128,7 +128,7 @@ static void create_char_pool(const Args* args, char** const out_chars, int* cons
 
     char* chars = (char*) malloc(size_chars * sizeof(char));
 
-    int i = 0;
+    byte i = 0;
 
     if (args->opt_low_letters) {
         strncpy(chars, LOW_LETTERS, SIZE_LETTERS);
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 
     // create the pool of characters that will be used
     char* chars;
-    int size_chars;
+    byte size_chars;
     create_char_pool(args, &chars, &size_chars);
 
     // open /dev/urandom
