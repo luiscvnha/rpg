@@ -29,6 +29,67 @@ static const char* const SPECIAL_CHARS = "!\"#$%&'()*+,-./:;<=>?@[\\]_{|}";
 static const int SIZE_SPECIAL_CHARS = 29;
 
 
+static void print_help(const char* argv_0) {
+    fprintf(stderr, "Usage: %s <options> <password length>\n", argv_0);
+    fprintf(stderr, "options:\n");
+    fprintf(stderr, "    -l   use lowercase letters\n");
+    fprintf(stderr, "    -u   use uppercase letters\n");
+    fprintf(stderr, "    -n   use numbers\n");
+    fprintf(stderr, "    -s   use special characters\n");
+}
+
+
+static bool parse_options(const char* str, Args* const args) {
+    for (int i = 0; str[i] != '\0'; ++i) {
+        char option = str[i];
+
+        switch (option) {
+            case 'l':
+                args->opt_low_letters = true;
+                break;
+            case 'u':
+                args->opt_upp_letters = true;
+                break;
+            case 'n':
+                args->opt_numbers = true;
+                break;
+            case 's':
+                args->opt_special_chars = true;
+                break;
+            default:
+                fprintf(stderr, "Invalid option: -%c\n", option);
+                return false;
+        }
+    }
+
+    return true;
+}
+
+
+static bool parse_passwd_len(const char* str, Args* const args) {
+    if (args->passwd_len >= 1) {
+        fprintf(stderr, "Invalid argument: %s\n", str);
+        return false;
+    }
+
+    char* str_end;
+    long passwd_len = strtol(str, &str_end, 10);
+
+    if (str_end == str || *str_end != '\0' || passwd_len < 1L) {
+        fprintf(stderr, "Invalid password length: %s\n", str);
+        return false;
+    }
+
+    if (passwd_len > INT_MAX) {
+        passwd_len = INT_MAX;
+    }
+
+    args->passwd_len = passwd_len;
+
+    return true;
+}
+
+
 static bool parse_args(int argc, char** argv, Args** const out_args) {
     Args* args = (Args*) malloc(sizeof(Args));
 
@@ -38,86 +99,56 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
     args->opt_numbers = false;
     args->opt_special_chars = false;
 
-    bool passwd_len_defined = false;
+    bool success = true;
 
     // check if the number of arguments is valid
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <options> <password length>\n", argv[0]);
-        fprintf(stderr, "options:\n");
-        fprintf(stderr, "    -l   use lowercase letters\n");
-        fprintf(stderr, "    -u   use uppercase letters\n");
-        fprintf(stderr, "    -n   use numbers\n");
-        fprintf(stderr, "    -s   use special characters\n");
-        free(args);
-        return false;
+        print_help(argv[0]);
+        success = false;
     }
 
     // check if the arguments are valid
-    for (int i = 1; i < argc; ++i) {
-        if (argv[i][0] == '-') {
+    for (int i = 1; success && i < argc; ++i) {
+        char* argv_i = argv[i];
+
+        if (argv_i[0] == '-') {
             // options
-            for (int j = 1; argv[i][j] != '\0'; ++j) {
-                switch (argv[i][j]) {
-                    case 'l':
-                        args->opt_low_letters = true;
-                        break;
-                    case 'u':
-                        args->opt_upp_letters = true;
-                        break;
-                    case 'n':
-                        args->opt_numbers = true;
-                        break;
-                    case 's':
-                        args->opt_special_chars = true;
-                        break;
-                    default:
-                        fprintf(stderr, "Invalid option: -%c\n", argv[i][j]);
-                        free(args);
-                        return false;
-                }
+            if (!parse_options(argv_i+1, args)) {
+                success = false;
             }
         } else {
             // password length
-            if (passwd_len_defined) {
-                fprintf(stderr, "Invalid argument: %s\n", argv[i]);
-                free(args);
-                return false;
-            } else {
-                long passwd_len = strtol(argv[i], NULL, 10);
-                if (passwd_len < 1L) {
-                    passwd_len = 1L;
-                }
-                if (passwd_len > INT_MAX) {
-                    passwd_len = INT_MAX;
-                }
-
-                args->passwd_len = passwd_len;
-                passwd_len_defined = true;
+            if (!parse_passwd_len(argv_i, args)) {
+                success = false;
             }
         }
     }
 
     // if the password length isn't defined
-    if (!passwd_len_defined) {
+    if (success && args->passwd_len < 1) {
         fprintf(stderr, "Password length not defined\n");
-        free(args);
-        return false;
+        success = false;
     }
 
     // if no options are defined
     if (
+        success &&
         !args->opt_low_letters &&
         !args->opt_upp_letters &&
         !args->opt_numbers &&
         !args->opt_special_chars
     ) {
         fprintf(stderr, "No option enabled\n");
+        success = false;
+    }
+
+    // if there's an error
+    if (!success) {
         free(args);
         return false;
     }
 
     *out_args = args;
-
     return true;
 }
 
