@@ -153,38 +153,38 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
 }
 
 
-static void create_char_pool(const Args* args, char** const out_chars, byte* const out_size_chars) {
-    byte size_chars =
+static void create_char_pool(const Args* args, char** const out_char_pool, byte* const out_size_char_pool) {
+    byte size_char_pool =
             (args->opt_low_letters ? SIZE_LETTERS : 0) +
             (args->opt_upp_letters ? SIZE_LETTERS : 0) +
             (args->opt_numbers ? SIZE_NUMBERS : 0) +
             (args->opt_special_chars ? SIZE_SPECIAL_CHARS : 0);
 
-    char* chars = (char*) malloc(size_chars * sizeof(char));
+    char* char_pool = (char*) malloc(size_char_pool * sizeof(char));
 
     byte i = 0;
 
     if (args->opt_low_letters) {
-        strncpy(chars, LOW_LETTERS, SIZE_LETTERS);
+        strncpy(char_pool, LOW_LETTERS, SIZE_LETTERS);
         i += SIZE_LETTERS;
     }
 
     if (args->opt_upp_letters) {
-        strncpy(chars+i, UPP_LETTERS, SIZE_LETTERS);
+        strncpy(char_pool+i, UPP_LETTERS, SIZE_LETTERS);
         i += SIZE_LETTERS;
     }
 
     if (args->opt_numbers) {
-        strncpy(chars+i, NUMBERS, SIZE_NUMBERS);
+        strncpy(char_pool+i, NUMBERS, SIZE_NUMBERS);
         i += SIZE_NUMBERS;
     }
 
     if (args->opt_special_chars) {
-        strncpy(chars+i, SPECIAL_CHARS, SIZE_SPECIAL_CHARS);
+        strncpy(char_pool+i, SPECIAL_CHARS, SIZE_SPECIAL_CHARS);
     }
 
-    *out_chars = chars;
-    *out_size_chars = size_chars;
+    *out_char_pool = char_pool;
+    *out_size_char_pool = size_char_pool;
 }
 
 
@@ -196,9 +196,9 @@ int main(int argc, char** argv) {
     }
 
     // create the pool of characters that will be used
-    char* chars;
-    byte size_chars;
-    create_char_pool(args, &chars, &size_chars);
+    char* char_pool;
+    byte size_char_pool;
+    create_char_pool(args, &char_pool, &size_char_pool);
 
     // open /dev/urandom
     int urandom = open("/dev/urandom", O_RDONLY);
@@ -217,10 +217,10 @@ int main(int argc, char** argv) {
     // close /dev/urandom
     close(urandom);
 
-    // fill `passwd` with the characters from `chars`
+    // fill `passwd` with the characters from `char_pool`
     char passwd[args->passwd_len+1];
     for (int i = 0; i < args->passwd_len; ++i) {
-        passwd[i] = chars[random_numbers[i] % size_chars];
+        passwd[i] = char_pool[random_numbers[i] % size_char_pool];
     }
 
     passwd[args->passwd_len] = '\0';
@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
 
     // free allocated memory
     free(args);
-    free(chars);
+    free(char_pool);
 
     return EXIT_SUCCESS;
 }
