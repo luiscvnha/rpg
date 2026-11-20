@@ -18,6 +18,14 @@ typedef struct args {
 } Args;
 
 
+static const int BYTE_MAX = UCHAR_MAX;
+static const double BYTE_MAX_D = BYTE_MAX;
+
+static const long INT_MAX_L = INT_MAX;
+
+static const int PASSWD_LEN_MIN = 1;
+static const long PASSWD_LEN_MIN_L = PASSWD_LEN_MIN;
+
 static const char* const LOW_LETTERS = "abcdefghijklmnopqrstuvwxyz";
 static const char* const UPP_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const int SIZE_LETTERS = 26;
@@ -67,7 +75,7 @@ static bool parse_options(const char* str, Args* const args) {
 
 
 static bool parse_passwd_len(const char* str, Args* const args) {
-    if (args->passwd_len >= 1) {
+    if (args->passwd_len >= PASSWD_LEN_MIN) {
         fprintf(stderr, "Invalid argument: %s\n", str);
         return false;
     }
@@ -75,13 +83,13 @@ static bool parse_passwd_len(const char* str, Args* const args) {
     char* str_end;
     long passwd_len = strtol(str, &str_end, 10);
 
-    if (str_end == str || *str_end != '\0' || passwd_len < 1L) {
+    if (str_end == str || *str_end != '\0' || passwd_len < PASSWD_LEN_MIN_L) {
         fprintf(stderr, "Invalid password length: %s\n", str);
         return false;
     }
 
-    if (passwd_len > INT_MAX) {
-        passwd_len = INT_MAX;
+    if (passwd_len > INT_MAX_L) {
+        passwd_len = INT_MAX_L;
     }
 
     args->passwd_len = passwd_len;
@@ -125,7 +133,7 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
     }
 
     // if the password length isn't defined
-    if (success && args->passwd_len < 1) {
+    if (success && args->passwd_len < PASSWD_LEN_MIN) {
         fprintf(stderr, "Password length not defined\n");
         success = false;
     }
@@ -162,7 +170,7 @@ static void create_char_pool(const Args* args, char** const out_char_pool, byte*
 
     char* char_pool = (char*) malloc(size_char_pool * sizeof(char));
 
-    byte i = 0;
+    int i = 0;
 
     if (args->opt_low_letters) {
         strncpy(char_pool, LOW_LETTERS, SIZE_LETTERS);
@@ -207,7 +215,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    // read random bytes (numbers between 0 and 255)
+    // read random bytes
     byte random_numbers[args->passwd_len];
     if (read(urandom, random_numbers, args->passwd_len) <= 0) {
         fprintf(stderr, "Error reading from /dev/urandom\n");
