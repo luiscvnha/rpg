@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <limits.h>
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
 
-
-typedef unsigned char byte;
 
 typedef struct args {
     int passwd_len;
@@ -19,13 +18,7 @@ typedef struct args {
 } Args;
 
 
-static const int BYTE_MAX = UCHAR_MAX;
-static const double BYTE_MAX_D = BYTE_MAX;
-
-static const long INT_MAX_L = INT_MAX;
-
 static const int PASSWD_LEN_MIN = 1;
-static const long PASSWD_LEN_MIN_L = PASSWD_LEN_MIN;
 
 static const char* const LOW_LETTERS = "abcdefghijklmnopqrstuvwxyz";
 static const char* const UPP_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -84,13 +77,13 @@ static bool parse_passwd_len(const char* str, Args* const args) {
     char* str_end;
     long passwd_len = strtol(str, &str_end, 10);
 
-    if (str_end == str || *str_end != '\0' || passwd_len < PASSWD_LEN_MIN_L) {
+    if (str_end == str || *str_end != '\0' || passwd_len < (long) PASSWD_LEN_MIN) {
         fprintf(stderr, "Invalid password length: %s\n", str);
         return false;
     }
 
-    if (passwd_len > INT_MAX_L) {
-        passwd_len = INT_MAX_L;
+    if (passwd_len > (long) INT_MAX) {
+        passwd_len = INT_MAX;
     }
 
     args->passwd_len = passwd_len;
@@ -162,8 +155,8 @@ static bool parse_args(int argc, char** argv, Args** const out_args) {
 }
 
 
-static void create_char_pool(const Args* args, char** const out_char_pool, byte* const out_size_char_pool) {
-    byte size_char_pool =
+static void create_char_pool(const Args* args, char** const out_char_pool, uint8_t* const out_size_char_pool) {
+    uint8_t size_char_pool =
             (args->opt_low_letters ? SIZE_LETTERS : 0) +
             (args->opt_upp_letters ? SIZE_LETTERS : 0) +
             (args->opt_numbers ? SIZE_NUMBERS : 0) +
@@ -206,7 +199,7 @@ int main(int argc, char** argv) {
 
     // create the pool of characters that will be used
     char* char_pool;
-    byte size_char_pool;
+    uint8_t size_char_pool;
     create_char_pool(args, &char_pool, &size_char_pool);
 
     // open /dev/urandom
@@ -217,8 +210,8 @@ int main(int argc, char** argv) {
     }
 
     // read random bytes
-    byte random_numbers[args->passwd_len];
-    if (read(urandom, random_numbers, args->passwd_len) <= 0) {
+    uint32_t random_numbers[args->passwd_len];
+    if (read(urandom, random_numbers, args->passwd_len * sizeof(uint32_t)) <= 0) {
         fprintf(stderr, "Error reading from /dev/urandom\n");
         return EXIT_FAILURE;
     }
@@ -228,12 +221,12 @@ int main(int argc, char** argv) {
 
     // fill `passwd` with the characters from `char_pool`
     char passwd[args->passwd_len+1];
-    double coeff = ((double) size_char_pool) / BYTE_MAX_D;
+    double coeff = ((double) size_char_pool) / ((double) UINT32_MAX);
 
     for (int i = 0; i < args->passwd_len; ++i) {
-        byte random_number = random_numbers[i];
+        uint32_t random_number = random_numbers[i];
 
-        byte char_index = trunc(((double) random_number) * coeff);
+        uint8_t char_index = trunc(((double) random_number) * coeff);
         if (char_index == size_char_pool) {
             --char_index;
         }
