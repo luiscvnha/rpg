@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 
 typedef unsigned char byte;
@@ -227,8 +228,17 @@ int main(int argc, char** argv) {
 
     // fill `passwd` with the characters from `char_pool`
     char passwd[args->passwd_len+1];
+    double coeff = ((double) size_char_pool) / BYTE_MAX_D;
+
     for (int i = 0; i < args->passwd_len; ++i) {
-        passwd[i] = char_pool[random_numbers[i] % size_char_pool];
+        byte random_number = random_numbers[i];
+
+        byte char_index = trunc(((double) random_number) * coeff);
+        if (char_index == size_char_pool) {
+            --char_index;
+        }
+
+        passwd[i] = char_pool[char_index];
     }
 
     passwd[args->passwd_len] = '\0';
